@@ -1,38 +1,34 @@
+use std::f64::INFINITY;
+
+use hittable::Hittable;
 use image;
 
+mod hitrecord;
+mod hittable;
+mod item;
 mod ray;
 mod vec3;
 
+use item::Sphere;
 use ray::Ray;
 use vec3::{color, unit_vector, Vec3};
 
-fn hit_sphere(center: Vec3, radius: f64, ray: &Ray) -> bool {
-    let oc = ray.origin() - center;
-    let a = ray.direction().length_squared();
-    let b = oc.dot(ray.direction()) * 2.0;
-    let c = oc.length_squared() - radius * radius;
-    let discriminant = b * b - 4.0 * a * c;
-    // 判別式が正の場合、二次方程式に２つの解がある
-    // レイが球を貫いている
-    discriminant > 0.0
-}
+fn ray_color(ray: &Ray) -> Vec3 {
+    let sphere = Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5);
 
-fn ray_color(ray: Ray, logging: bool) -> Vec3 {
-    let sphere_center = Vec3::new(0.0, 0.0, -1.0);
-    let radius = 0.5;
-    if hit_sphere(sphere_center, radius, &ray) {
-        return color(1.0, 0.0, 0.0);
+    match sphere.hit(ray, 0.0, INFINITY) {
+        None => {
+            let unit_direction = unit_vector(ray.direction());
+            let two = 2.0_f64;
+            let sqrt2: f64 = two.sqrt();
+            let t = (unit_direction.y() + 1.0 / sqrt2) / sqrt2;
+            return color(1.0, 1.0, 1.0) * (1.0 - t) + color(0.5, 0.7, 1.0) * t;
+        }
+        Some(hit_record) => {
+            let n = hit_record.normal();
+            return color(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0) * 0.5;
+        }
     }
-
-    let unit_direction = unit_vector(ray.direction());
-    let two = 2.0_f64;
-    let sqrt2: f64 = two.sqrt();
-    let t = (unit_direction.y() + 1.0 / sqrt2) / sqrt2;
-
-    if logging {
-        eprintln!("{:?}, {:?}", unit_direction, t);
-    }
-    color(1.0, 1.0, 1.0) * (1.0 - t) + color(0.5, 0.7, 1.0) * t
 }
 
 fn main() {
@@ -70,13 +66,7 @@ fn main() {
             lower_left_corner + horizontal * u + vertical * v - origin,
         );
 
-        let color: Vec3;
-        if x == 192 {
-            eprint!("{:?}, {:?} ", u, v);
-            color = ray_color(ray, true);
-        } else {
-            color = ray_color(ray, false);
-        }
+        let color = ray_color(&ray);
 
         let ir = (255.999 * color.r()) as u8;
         let ig = (255.999 * color.g()) as u8;
