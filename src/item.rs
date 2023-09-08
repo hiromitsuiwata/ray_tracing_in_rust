@@ -3,6 +3,7 @@ use crate::hittable::Hittable;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
+#[derive(Clone, Copy, Debug)]
 pub struct Sphere {
     center: Vec3,
     radius: f64,
@@ -28,13 +29,13 @@ impl Hittable for Sphere {
             None
         } else {
             // 解がある場合はtが小さいほう(原点から近いほう)のHitRecordを返す
-            let t = (-b - discriminant.sqrt()) / (2.0 * a);
+            let t: f64 = (-b - discriminant.sqrt()) / (2.0 * a);
 
             if tmin < t && t < tmax {
                 let point = ray.at(t);
                 let outward_normal = (point - self.center) / self.radius;
 
-                let mut hit_record = HitRecord::new(point, outward_normal, true);
+                let mut hit_record = HitRecord::new(point, outward_normal, true, t);
                 hit_record.set_face_normal(ray, outward_normal);
                 Some(hit_record)
             } else {
