@@ -10,6 +10,7 @@ mod color;
 mod hitrecord;
 mod hittable;
 mod item;
+mod material;
 mod ray;
 mod vec3;
 
@@ -18,7 +19,9 @@ use color::*;
 use item::Sphere;
 use rand::Rng;
 use ray::Ray;
-use vec3::{color, origin, random_in_unit_sphere, random_unit_vector, unit_vector, Vec3};
+use vec3::{color, origin, random_unit_vector, reflect, unit_vector, Vec3};
+
+use crate::material::Material;
 
 fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
     // 反射回数が一定よりも多くなったら、その時点で追跡をやめる
@@ -53,14 +56,30 @@ fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
         let t = (unit_direction.y() + 1.0 / sqrt2) / sqrt2;
         return color(1.0, 1.0, 1.0) * (1.0 - t) + color(0.5, 0.7, 1.0) * t;
     } else {
-        // 物体に当たった場合、
-        // let target = closest_record.point() + closest_record.normal() + random_in_unit_sphere();
-        let target = closest_record.point() + closest_record.normal() + random_unit_vector();
-        // 反射するレイ
-        let ray = Ray::new(closest_record.point(), target - closest_record.point());
-        return ray_color(&ray, world, depth - 1) * 0.5;
-        // let n = closest_record.normal();
-        // return (n + color(1.0, 1.0, 1.0)) * 0.5;
+        // 物体に当たった場合
+        match closest_record.material() {
+            // 拡散マテリアル
+            Material::Lambertian => {
+                // 新しい向き先(拡散)
+                let target =
+                    closest_record.point() + closest_record.normal() + random_unit_vector();
+                // 跳ね返ったレイ
+                let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
+                return ray_color(&new_ray, world, depth - 1) * closest_record.attenuation();
+            }
+            // 金属マテリアル
+            Material::Metal => {
+                // 新しい向き先(反射)
+                let target = reflect(unit_vector(ray.direction()), closest_record.normal())
+                    + random_unit_vector() * closest_record.metal_fuzz();
+                // 跳ね返ったレイ
+                let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
+                return ray_color(&new_ray, world, depth - 1) * closest_record.attenuation();
+            }
+            Material::None => {
+                return color(1.0, 0.0, 0.0);
+            }
+        }
     }
 }
 
@@ -93,10 +112,58 @@ fn main() {
 
     // 物体を配置
     let mut world: Vec<Box<dyn Hittable>> = Vec::new();
-    world.push(Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0)));
-    world.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5)));
-    world.push(Box::new(Sphere::new(Vec3::new(-1.5, 0.0, -1.6), 0.4)));
-    world.push(Box::new(Sphere::new(Vec3::new(0.45, 0.1, -0.6), 0.1)));
+    // world.push(Box::new(Sphere::new(
+    //     Vec3::new(0.0, -100.5, -1.0),
+    //     100.0,
+    //     Material::Lambertian,
+    //     color(0.7, 0.3, 0.3),
+    // )));
+    // world.push(Box::new(Sphere::new(
+    //     Vec3::new(0.0, 0.0, -1.0),
+    //     0.5,
+    //     Material::Lambertian,
+    //     color(0.8, 0.8, 0.0),
+    // )));
+    // world.push(Box::new(Sphere::new(
+    //     Vec3::new(-1.5, 0.0, -1.6),
+    //     0.4,
+    //     Material::Metal,
+    //     color(0.8, 0.6, 0.2),
+    // )));
+    // world.push(Box::new(Sphere::new(
+    //     Vec3::new(0.45, 0.1, -0.6),
+    //     0.1,
+    //     Material::Lambertian,
+    //     color(0.8, 0.8, 0.8),
+    // )));
+    world.push(Box::new(Sphere::new(
+        Vec3::new(0.0, 0.0, -1.0),
+        0.5,
+        Material::Lambertian,
+        color(0.7, 0.3, 0.3),
+        0.0,
+    )));
+    world.push(Box::new(Sphere::new(
+        Vec3::new(0.0, -100.5, -1.0),
+        100.0,
+        Material::Lambertian,
+        color(0.8, 0.8, 0.0),
+        0.0,
+    )));
+    world.push(Box::new(Sphere::new(
+        Vec3::new(1.0, 0.0, -1.0),
+        0.5,
+        Material::Metal,
+        color(0.8, 0.6, 0.2),
+        0.3,
+    )));
+    world.push(Box::new(Sphere::new(
+        Vec3::new(-1.0, 0.0, -1.0),
+        0.5,
+        Material::Metal,
+        color(0.8, 0.8, 0.8),
+        0.05,
+    )));
 
     // 進捗
     let mut progress: u32 = 0;

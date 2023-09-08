@@ -97,6 +97,20 @@ impl Sub for Vec3 {
     }
 }
 
+impl Mul for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, other: Vec3) -> Vec3 {
+        Vec3 {
+            e: [
+                self.x() * other.x(),
+                self.y() * other.y(),
+                self.z() * other.z(),
+            ],
+        }
+    }
+}
+
 impl Mul<f64> for Vec3 {
     type Output = Vec3;
 
@@ -135,27 +149,6 @@ fn random_f64(min: f64, max: f64) -> f64 {
     scale * rng.gen::<f64>() + min
 }
 
-fn random_vec(min: f64, max: f64) -> Vec3 {
-    let scale = max - min;
-    // 乱数
-    let mut rng = rand::thread_rng();
-    let r1 = scale * rng.gen::<f64>() + min;
-    let r2 = scale * rng.gen::<f64>() + min;
-    let r3 = scale * rng.gen::<f64>() + min;
-    Vec3::new(r1, r2, r3)
-}
-
-pub fn random_in_unit_sphere() -> Vec3 {
-    loop {
-        let r = random_vec(-1.0, 1.0);
-        if r.length_squared() >= 1.0 {
-            continue;
-        } else {
-            return r;
-        }
-    }
-}
-
 pub fn random_unit_vector() -> Vec3 {
     // 緯度
     let a = random_f64(0.0, 2.0 * PI);
@@ -163,4 +156,8 @@ pub fn random_unit_vector() -> Vec3 {
     let z = random_f64(-1.0, 1.0);
     let r = (1.0 - z * z).sqrt();
     Vec3::new(r * a.cos(), r * a.sin(), z)
+}
+
+pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+    v - n * v.dot(n) * 2.0
 }
