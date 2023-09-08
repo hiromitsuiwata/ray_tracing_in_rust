@@ -122,3 +122,7 @@ pub fn unit_vector(v: Vec3) -> Vec3 {
 pub fn color(r: f64, g: f64, b: f64) -> Vec3 {
     Vec3 { e: [r, g, b] }
 }
+
+pub fn origin() -> Vec3 {
+    Vec3::new(0.0, 0.0, 0.0)
+}

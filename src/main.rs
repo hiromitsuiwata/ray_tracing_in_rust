@@ -2,17 +2,19 @@ use std::f64::INFINITY;
 
 use hitrecord::HitRecord;
 use hittable::Hittable;
-use image;
+use image::{self, ImageBuffer};
 
+mod camera;
 mod hitrecord;
 mod hittable;
 mod item;
 mod ray;
 mod vec3;
 
+use camera::Camera;
 use item::Sphere;
 use ray::Ray;
-use vec3::{color, unit_vector, Vec3};
+use vec3::{color, origin, unit_vector, Vec3};
 
 fn ray_color(ray: &Ray, world: Vec<Box<dyn Hittable>>) -> Vec3 {
     let iter = world.iter();
@@ -52,41 +54,22 @@ fn main() {
     // 定数設定
     const ASPECT_RATIO: f64 = 16.0 / 9.0;
     const IMAGE_WIDTH: u32 = 384;
-    // const IMAGE_WIDTH: u32 = 1024;
     const IMAGE_HEIGHT: u32 = ((IMAGE_WIDTH as f64) / ASPECT_RATIO) as u32;
+    const HEIGHT: f64 = (IMAGE_HEIGHT - 1) as f64;
+    const WIDTH: f64 = (IMAGE_WIDTH - 1) as f64;
 
-    const VIEWPORT_HEIGHT: f64 = 2.0;
-    const VIEWPORT_WIDTH: f64 = ASPECT_RATIO * VIEWPORT_HEIGHT;
-    const FOCAL_LENGTH: f64 = 1.0;
-
-    let origin = Vec3::new(0.0, 0.0, 0.0);
-    let horizontal = Vec3::new(VIEWPORT_WIDTH, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, VIEWPORT_HEIGHT, 0.0);
-    let lower_left_corner =
-        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, FOCAL_LENGTH);
-
-    eprintln!("bottom_left_corner: {:?}", lower_left_corner);
-    eprintln!(
-        "top_right_corner: {:?}",
-        lower_left_corner + horizontal + vertical
-    );
+    let camera = Camera::new(ASPECT_RATIO, IMAGE_WIDTH, 2.0, 1.0, origin());
 
     let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
-
-    let height = (IMAGE_HEIGHT - 1) as f64;
-    let width = (IMAGE_WIDTH - 1) as f64;
 
     // カメラから見える画角の1ピクセルごとに色を決めていく
     for (x, y, pixel) in img.enumerate_pixels_mut() {
         // 画角の横座標
-        let u = (x as f64) / width;
+        let u = (x as f64) / WIDTH;
         // 画角の縦座標
         // 画角の座標系では左上が(0, 0)なためy軸の向きが逆になっている
-        let v = (height - (y as f64)) / height;
-        let ray = Ray::new(
-            origin,
-            lower_left_corner + horizontal * u + vertical * v - origin,
-        );
+        let v = (HEIGHT - (y as f64)) / HEIGHT;
+        let ray = camera.get_ray(u, v);
 
         // 物体を配置
         let mut world: Vec<Box<dyn Hittable>> = Vec::new();
