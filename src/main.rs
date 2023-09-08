@@ -18,7 +18,7 @@ use color::*;
 use item::Sphere;
 use rand::Rng;
 use ray::Ray;
-use vec3::{color, origin, random_in_unit_sphere, unit_vector, Vec3};
+use vec3::{color, origin, random_in_unit_sphere, random_unit_vector, unit_vector, Vec3};
 
 fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
     // 反射回数が一定よりも多くなったら、その時点で追跡をやめる
@@ -54,7 +54,8 @@ fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
         return color(1.0, 1.0, 1.0) * (1.0 - t) + color(0.5, 0.7, 1.0) * t;
     } else {
         // 物体に当たった場合、
-        let target = closest_record.point() + closest_record.normal() + random_in_unit_sphere();
+        // let target = closest_record.point() + closest_record.normal() + random_in_unit_sphere();
+        let target = closest_record.point() + closest_record.normal() + random_unit_vector();
         // 反射するレイ
         let ray = Ray::new(closest_record.point(), target - closest_record.point());
         return ray_color(&ray, world, depth - 1) * 0.5;

@@ -1,4 +1,4 @@
-use std::ops::*;
+use std::{f64::consts::PI, ops::*};
 
 use rand::Rng;
 
@@ -129,6 +129,12 @@ pub fn origin() -> Vec3 {
     Vec3::new(0.0, 0.0, 0.0)
 }
 
+fn random_f64(min: f64, max: f64) -> f64 {
+    let scale = max - min;
+    let mut rng = rand::thread_rng();
+    scale * rng.gen::<f64>() + min
+}
+
 fn random_vec(min: f64, max: f64) -> Vec3 {
     let scale = max - min;
     // 乱数
@@ -148,4 +154,13 @@ pub fn random_in_unit_sphere() -> Vec3 {
             return r;
         }
     }
+}
+
+pub fn random_unit_vector() -> Vec3 {
+    // 緯度
+    let a = random_f64(0.0, 2.0 * PI);
+    // 高さ
+    let z = random_f64(-1.0, 1.0);
+    let r = (1.0 - z * z).sqrt();
+    Vec3::new(r * a.cos(), r * a.sin(), z)
 }
