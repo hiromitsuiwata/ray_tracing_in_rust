@@ -6,7 +6,24 @@ mod vec3;
 use ray::Ray;
 use vec3::{color, unit_vector, Vec3};
 
+fn hit_sphere(center: Vec3, radius: f64, ray: &Ray) -> bool {
+    let oc = ray.origin() - center;
+    let a = ray.direction().length_squared();
+    let b = oc.dot(ray.direction()) * 2.0;
+    let c = oc.length_squared() - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+    // 判別式が正の場合、二次方程式に２つの解がある
+    // レイが球を貫いている
+    discriminant > 0.0
+}
+
 fn ray_color(ray: Ray, logging: bool) -> Vec3 {
+    let sphere_center = Vec3::new(0.0, 0.0, -1.0);
+    let radius = 0.5;
+    if hit_sphere(sphere_center, radius, &ray) {
+        return color(1.0, 0.0, 0.0);
+    }
+
     let unit_direction = unit_vector(ray.direction());
     let two = 2.0_f64;
     let sqrt2: f64 = two.sqrt();

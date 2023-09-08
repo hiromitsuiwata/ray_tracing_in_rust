@@ -14,6 +14,10 @@ impl Ray {
         self.direction
     }
 
+    pub fn origin(&self) -> Vec3 {
+        self.origin
+    }
+
     pub fn at(&self, t: f64) -> Vec3 {
         self.origin + self.direction * t
     }
