@@ -2,9 +2,9 @@ use std::f64::INFINITY;
 
 use hitrecord::HitRecord;
 use hittable::Hittable;
-use image::{self, ImageBuffer};
 
 mod camera;
+mod color;
 mod hitrecord;
 mod hittable;
 mod item;
@@ -12,6 +12,7 @@ mod ray;
 mod vec3;
 
 use camera::Camera;
+use color::*;
 use item::Sphere;
 use ray::Ray;
 use vec3::{color, origin, unit_vector, Vec3};
@@ -81,11 +82,8 @@ fn main() {
         // レイを飛ばして色を決める
         let color = ray_color(&ray, world);
 
-        // ピクセルに塗る色に変換
-        let ir = (255.999 * color.r()) as u8;
-        let ig = (255.999 * color.g()) as u8;
-        let ib = (255.999 * color.b()) as u8;
-        *pixel = image::Rgb([ir, ig, ib]);
+        // ピクセルに色を塗る
+        write_color(pixel, color);
 
         // 進捗を表示
         if y == IMAGE_HEIGHT - 1 {
