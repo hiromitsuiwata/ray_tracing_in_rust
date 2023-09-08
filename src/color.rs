@@ -5,6 +5,7 @@ use crate::vec3::Vec3;
 pub fn write_color(pixel: &mut Rgb<u8>, color: Vec3, sample_per_pixel: u32) {
     let scale: f64 = 1.0 / sample_per_pixel as f64;
 
+    // 週末レイトレーシングの文書にはガンマ補正(γ=2)として平方根をとると記載されているがPNGにしているためか補正しなくてもよさそう
     let r = color.r() * scale;
     let g = color.g() * scale;
     let b = color.b() * scale;

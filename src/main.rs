@@ -18,9 +18,14 @@ use color::*;
 use item::Sphere;
 use rand::Rng;
 use ray::Ray;
-use vec3::{color, origin, unit_vector, Vec3};
+use vec3::{color, origin, random_in_unit_sphere, unit_vector, Vec3};
 
-fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>) -> Vec3 {
+fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
+    // 反射回数が一定よりも多くなったら、その時点で追跡をやめる
+    if depth <= 0 {
+        return color(0.0, 0.0, 0.0);
+    }
+
     let iter = world.iter();
 
     // 物体に衝突する場合
@@ -29,7 +34,7 @@ fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>) -> Vec3 {
     // カメラに最も近い物体のHitRecordを探す
     let mut tmax = INFINITY;
     for item in iter {
-        match item.hit(ray, 0.0, tmax) {
+        match item.hit(ray, 0.001, tmax) {
             None => {}
             Some(hit_record) => {
                 if closest_record.t() > hit_record.t() {
@@ -48,32 +53,49 @@ fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>) -> Vec3 {
         let t = (unit_direction.y() + 1.0 / sqrt2) / sqrt2;
         return color(1.0, 1.0, 1.0) * (1.0 - t) + color(0.5, 0.7, 1.0) * t;
     } else {
-        // 物体の色
-        let n = closest_record.normal();
-        return (n + color(1.0, 1.0, 1.0)) * 0.5;
+        // 物体に当たった場合、
+        let target = closest_record.point() + closest_record.normal() + random_in_unit_sphere();
+        // 反射するレイ
+        let ray = Ray::new(closest_record.point(), target - closest_record.point());
+        return ray_color(&ray, world, depth - 1) * 0.5;
+        // let n = closest_record.normal();
+        // return (n + color(1.0, 1.0, 1.0)) * 0.5;
     }
 }
 
 fn main() {
     // 定数設定
+
+    // アスペクト比
     const ASPECT_RATIO: f64 = 16.0 / 9.0;
+    // 横幅
     const IMAGE_WIDTH: u32 = 225;
+    // const IMAGE_WIDTH: u32 = 1024;
+
+    // アンチエイリアシングのためのサンプル数
+    const SAMPLE_PER_PIXEL: u32 = 20;
+    // const SAMPLE_PER_PIXEL: u32 = 100;
+
+    // 反射回数の上限値。これ以上の反射が起きたら黒色とする
+    const MAX_DEPTH: u32 = 10;
+    // const MAX_DEPTH: u32 = 50;
+
     const IMAGE_HEIGHT: u32 = ((IMAGE_WIDTH as f64) / ASPECT_RATIO) as u32;
     const HEIGHT: f64 = (IMAGE_HEIGHT - 1) as f64;
     const WIDTH: f64 = (IMAGE_WIDTH - 1) as f64;
-    const SAMPLE_PER_PIXEL: u32 = 20;
     const NUM_OF_PIXELS: u32 = IMAGE_WIDTH * IMAGE_HEIGHT;
 
+    // カメラ
     let camera = Camera::new(ASPECT_RATIO, IMAGE_WIDTH, 2.0, 1.0, origin());
 
     let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
     // 物体を配置
     let mut world: Vec<Box<dyn Hittable>> = Vec::new();
-    world.push(Box::new(Sphere::new(Vec3::new(-0.2, 0.5, -1.6), 0.4)));
     world.push(Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0)));
-    world.push(Box::new(Sphere::new(Vec3::new(0.2, 0.1, -0.6), 0.1)));
-    world.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.3)));
+    world.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5)));
+    world.push(Box::new(Sphere::new(Vec3::new(-1.5, 0.0, -1.6), 0.4)));
+    world.push(Box::new(Sphere::new(Vec3::new(0.45, 0.1, -0.6), 0.1)));
 
     // 進捗
     let mut progress: u32 = 0;
@@ -98,7 +120,7 @@ fn main() {
             let ray = camera.get_ray(u, v);
 
             // レイを飛ばして色を決める
-            let color = ray_color(&ray, &world);
+            let color = ray_color(&ray, &world, MAX_DEPTH);
             // 足しこむ
             sum_of_colors = sum_of_colors + color;
         }

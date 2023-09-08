@@ -1,5 +1,7 @@
 use std::ops::*;
 
+use rand::Rng;
+
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3 {
     e: [f64; 3],
@@ -125,4 +127,25 @@ pub fn color(r: f64, g: f64, b: f64) -> Vec3 {
 
 pub fn origin() -> Vec3 {
     Vec3::new(0.0, 0.0, 0.0)
+}
+
+fn random_vec(min: f64, max: f64) -> Vec3 {
+    let scale = max - min;
+    // 乱数
+    let mut rng = rand::thread_rng();
+    let r1 = scale * rng.gen::<f64>() + min;
+    let r2 = scale * rng.gen::<f64>() + min;
+    let r3 = scale * rng.gen::<f64>() + min;
+    Vec3::new(r1, r2, r3)
+}
+
+pub fn random_in_unit_sphere() -> Vec3 {
+    loop {
+        let r = random_vec(-1.0, 1.0);
+        if r.length_squared() >= 1.0 {
+            continue;
+        } else {
+            return r;
+        }
+    }
 }
