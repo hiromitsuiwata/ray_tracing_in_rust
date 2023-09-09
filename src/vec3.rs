@@ -161,6 +161,12 @@ pub fn random_unit_vector() -> Vec3 {
     Vec3::new(r * a.cos(), r * a.sin(), z)
 }
 
+/// 原点からxy平面上に原点中心で配置された単位円の円周上の点を向くランダムなベクトル
+pub fn random_in_unit_disk() -> Vec3 {
+    let theta = random_f64(0.0, 2.0 * PI);
+    Vec3::new(theta.cos(), theta.sin(), 0.0)
+}
+
 /// 金属マテリアルの反射
 pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
     v - n * v.dot(n) * 2.0

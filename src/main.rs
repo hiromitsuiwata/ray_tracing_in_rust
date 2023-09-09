@@ -134,8 +134,8 @@ fn main() {
     // const SAMPLE_PER_PIXEL: u32 = 100;
 
     // 反射回数の上限値。これ以上の反射が起きたら黒色とする
-    const MAX_DEPTH: u32 = 10;
-    // const MAX_DEPTH: u32 = 50;
+    // const MAX_DEPTH: u32 = 10;
+    const MAX_DEPTH: u32 = 50;
 
     const IMAGE_HEIGHT: u32 = ((IMAGE_WIDTH as f64) / ASPECT_RATIO) as u32;
     const HEIGHT: f64 = (IMAGE_HEIGHT - 1) as f64;
@@ -143,7 +143,19 @@ fn main() {
     const NUM_OF_PIXELS: u32 = IMAGE_WIDTH * IMAGE_HEIGHT;
 
     // カメラ
-    let camera = Camera::new(ASPECT_RATIO, IMAGE_WIDTH, 2.0, 1.0, origin());
+    let look_from = Vec3::new(3.0, 3.0, 2.0);
+    let look_at = Vec3::new(0.0, 0.0, -1.0);
+    let dist_to_focus = (look_from - look_at).length();
+    let camera = Camera::new(
+        look_from,
+        look_at,
+        Vec3::new(0.0, 1.0, 0.0),
+        20.0,
+        ASPECT_RATIO,
+        IMAGE_WIDTH,
+        2.0,
+        dist_to_focus,
+    );
 
     let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
@@ -151,10 +163,10 @@ fn main() {
     let mut world: Vec<Box<dyn Hittable>> = Vec::new();
 
     world.push(Box::new(Sphere::new(
-        Vec3::new(0.5, 0.0, -1.0),
+        Vec3::new(0.0, 0.0, -1.0),
         0.5,
         Material::Lambertian,
-        color(0.7, 0.3, 0.3),
+        color(0.3, 0.3, 0.7),
         0.0,
     )));
     world.push(Box::new(Sphere::new(
