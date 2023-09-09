@@ -61,25 +61,23 @@ fn ray_color(ray: &Ray, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
             // 拡散マテリアル
             Material::Lambertian => {
                 // 新しい向き先(拡散)
-                let target =
-                    closest_record.point() + closest_record.normal() + random_unit_vector();
+                let target = closest_record.normal() + random_unit_vector();
                 // 跳ね返ったレイ
-                let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
+                let new_ray = Ray::new(closest_record.point(), target);
                 return ray_color(&new_ray, scene, depth - 1) * closest_record.attenuation();
             }
             // 金属マテリアル
             Material::Metal => {
                 // 新しい向き先(反射)
-                let target = reflect(unit_vector(ray.direction()), closest_record.normal())
-                    + random_unit_vector() * closest_record.metal_fuzz();
+                let target = reflect(unit_vector(ray.direction()), closest_record.normal());
                 // 跳ね返ったレイ
-                let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
+                let new_ray = Ray::new(closest_record.point(), target);
                 return ray_color(&new_ray, scene, depth - 1) * closest_record.attenuation();
             }
             // 誘電体マテリアル
             Material::Dielectric => {
                 // 新しい向き先(屈折)
-                let ref_idx = 1.7;
+                let ref_idx = 1.5;
                 let etai_over_etat: f32;
                 if closest_record.front_face() {
                     etai_over_etat = 1.0 / ref_idx;
@@ -102,13 +100,13 @@ fn ray_color(ray: &Ray, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
                     // 反射
                     let target = reflect(unit_vector(ray.direction()), closest_record.normal());
                     // 跳ね返ったレイ
-                    let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
+                    let new_ray = Ray::new(closest_record.point(), target);
                     return ray_color(&new_ray, scene, depth - 1);
                 }
 
                 // 屈折
                 let target = refract(unit_direction, closest_record.normal(), etai_over_etat);
-                let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
+                let new_ray = Ray::new(closest_record.point(), target);
                 return ray_color(&new_ray, scene, depth - 1);
             }
             // 未指定
@@ -126,8 +124,8 @@ fn main() {
     const ASPECT_RATIO: f32 = 16.0 / 9.0;
     // 横幅
     // const IMAGE_WIDTH: u32 = 225;
-    const IMAGE_WIDTH: u32 = 1024;
-    // const IMAGE_WIDTH: u32 = 512;
+    // const IMAGE_WIDTH: u32 = 1024;
+    const IMAGE_WIDTH: u32 = 512;
 
     // アンチエイリアシングのためのサンプル数
     // const SAMPLE_PER_PIXEL: u32 = 20;
@@ -159,7 +157,7 @@ fn main() {
 
     let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
-    let scene = Scene::scene0();
+    let scene = Scene::random_scene();
 
     // 進捗
     let mut progress: u32 = 0;

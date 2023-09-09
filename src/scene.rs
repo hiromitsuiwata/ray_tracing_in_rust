@@ -138,22 +138,23 @@ impl Scene {
             0.0,
         )));
 
+        let albedo = random_color() * random_color();
         scene.push(Box::new(Sphere::new(
             Vec3::new(0.0, 1.0, 0.0),
             1.0,
-            Material::Metal,
+            Material::Dielectric,
             color(1.0, 1.0, 1.0),
             0.0,
         )));
 
-        // let albedo = random_color() * random_color();
-        // scene.push(Box::new(Sphere::new(
-        //     Vec3::new(1.0, 0.2, 0.0),
-        //     0.2,
-        //     Material::Lambertian,
-        //     albedo,
-        //     0.0,
-        // )));
+        let albedo = color(1.0, 0.0, 0.0);
+        scene.push(Box::new(Sphere::new(
+            Vec3::new(0.0, 0.3, -5.0),
+            0.3,
+            Material::Lambertian,
+            albedo,
+            0.0,
+        )));
         scene
     }
 }
