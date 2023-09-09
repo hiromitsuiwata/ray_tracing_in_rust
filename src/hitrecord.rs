@@ -60,6 +60,10 @@ impl HitRecord {
         self.material
     }
 
+    pub fn front_face(&self) -> bool {
+        self.front_face
+    }
+
     pub fn t(&self) -> f64 {
         self.t
     }

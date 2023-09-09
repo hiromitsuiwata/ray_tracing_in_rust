@@ -19,7 +19,7 @@ use color::*;
 use item::Sphere;
 use rand::Rng;
 use ray::Ray;
-use vec3::{color, origin, random_unit_vector, reflect, unit_vector, Vec3};
+use vec3::{color, origin, random_f64, random_unit_vector, reflect, refract, unit_vector, Vec3};
 
 use crate::material::Material;
 
@@ -76,6 +76,42 @@ fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
                 let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
                 return ray_color(&new_ray, world, depth - 1) * closest_record.attenuation();
             }
+            // 誘電体マテリアル
+            Material::Dielectric => {
+                // 新しい向き先(屈折)
+                let ref_idx = 1.7;
+                let etai_over_etat: f64;
+                if closest_record.front_face() {
+                    etai_over_etat = 1.0 / ref_idx;
+                } else {
+                    etai_over_etat = ref_idx;
+                }
+                let unit_direction = unit_vector(ray.direction());
+
+                let a = -unit_direction.dot(closest_record.normal());
+                let cos_theta: f64;
+                if a < 1.0 {
+                    cos_theta = a;
+                } else {
+                    cos_theta = 1.0;
+                }
+
+                let reflect_prob = Material::shlick(cos_theta, etai_over_etat);
+
+                if random_f64(0.0, 1.0) < reflect_prob {
+                    // 反射
+                    let target = reflect(unit_vector(ray.direction()), closest_record.normal());
+                    // 跳ね返ったレイ
+                    let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
+                    return ray_color(&new_ray, world, depth - 1);
+                }
+
+                // 屈折
+                let target = refract(unit_direction, closest_record.normal(), etai_over_etat);
+                let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
+                return ray_color(&new_ray, world, depth - 1);
+            }
+            // 未指定
             Material::None => {
                 return color(1.0, 0.0, 0.0);
             }
@@ -91,6 +127,7 @@ fn main() {
     // 横幅
     const IMAGE_WIDTH: u32 = 225;
     // const IMAGE_WIDTH: u32 = 1024;
+    // const IMAGE_WIDTH: u32 = 512;
 
     // アンチエイリアシングのためのサンプル数
     const SAMPLE_PER_PIXEL: u32 = 20;
@@ -112,32 +149,9 @@ fn main() {
 
     // 物体を配置
     let mut world: Vec<Box<dyn Hittable>> = Vec::new();
-    // world.push(Box::new(Sphere::new(
-    //     Vec3::new(0.0, -100.5, -1.0),
-    //     100.0,
-    //     Material::Lambertian,
-    //     color(0.7, 0.3, 0.3),
-    // )));
-    // world.push(Box::new(Sphere::new(
-    //     Vec3::new(0.0, 0.0, -1.0),
-    //     0.5,
-    //     Material::Lambertian,
-    //     color(0.8, 0.8, 0.0),
-    // )));
-    // world.push(Box::new(Sphere::new(
-    //     Vec3::new(-1.5, 0.0, -1.6),
-    //     0.4,
-    //     Material::Metal,
-    //     color(0.8, 0.6, 0.2),
-    // )));
-    // world.push(Box::new(Sphere::new(
-    //     Vec3::new(0.45, 0.1, -0.6),
-    //     0.1,
-    //     Material::Lambertian,
-    //     color(0.8, 0.8, 0.8),
-    // )));
+
     world.push(Box::new(Sphere::new(
-        Vec3::new(0.0, 0.0, -1.0),
+        Vec3::new(0.5, 0.0, -1.0),
         0.5,
         Material::Lambertian,
         color(0.7, 0.3, 0.3),
@@ -155,14 +169,14 @@ fn main() {
         0.5,
         Material::Metal,
         color(0.8, 0.6, 0.2),
-        0.3,
+        0.0,
     )));
     world.push(Box::new(Sphere::new(
-        Vec3::new(-1.0, 0.0, -1.0),
+        Vec3::new(-0.5, 0.0, -1.0),
         0.5,
-        Material::Metal,
-        color(0.8, 0.8, 0.8),
-        0.05,
+        Material::Dielectric,
+        color(1.0, 1.0, 1.0),
+        0.0,
     )));
 
     // 進捗

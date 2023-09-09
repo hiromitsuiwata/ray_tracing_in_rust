@@ -139,16 +139,19 @@ pub fn color(r: f64, g: f64, b: f64) -> Vec3 {
     Vec3 { e: [r, g, b] }
 }
 
+/// 原点
 pub fn origin() -> Vec3 {
     Vec3::new(0.0, 0.0, 0.0)
 }
 
-fn random_f64(min: f64, max: f64) -> f64 {
+/// ランダムな小数
+pub fn random_f64(min: f64, max: f64) -> f64 {
     let scale = max - min;
     let mut rng = rand::thread_rng();
     scale * rng.gen::<f64>() + min
 }
 
+/// 単位球の中心から球面上を向くランダムなベクトル
 pub fn random_unit_vector() -> Vec3 {
     // 緯度
     let a = random_f64(0.0, 2.0 * PI);
@@ -158,6 +161,15 @@ pub fn random_unit_vector() -> Vec3 {
     Vec3::new(r * a.cos(), r * a.sin(), z)
 }
 
+/// 金属マテリアルの反射
 pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
     v - n * v.dot(n) * 2.0
+}
+
+/// 誘電体マテリアルの屈折
+pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f64) -> Vec3 {
+    let cos_theta = -uv.dot(n);
+    let r_out_parallel = (uv + n * cos_theta) * etai_over_etat;
+    let r_out_perp = -n * (1.0 - r_out_parallel.length_squared());
+    r_out_parallel + r_out_perp
 }
