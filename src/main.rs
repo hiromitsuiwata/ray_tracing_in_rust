@@ -19,6 +19,7 @@ use camera::Camera;
 use color::*;
 use rand::Rng;
 use ray::Ray;
+use rayon::prelude::*;
 use vec3::{color, origin, random_f32, random_unit_vector, reflect, refract, unit_vector, Vec3};
 
 use crate::{material::Material, scene::Scene};
@@ -69,7 +70,8 @@ fn ray_color(ray: &Ray, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
             // 金属マテリアル
             Material::Metal => {
                 // 新しい向き先(反射)
-                let target = reflect(unit_vector(ray.direction()), closest_record.normal());
+                let target = reflect(unit_vector(ray.direction()), closest_record.normal())
+                    + random_unit_vector() * closest_record.metal_fuzz();
                 // 跳ね返ったレイ
                 let new_ray = Ray::new(closest_record.point(), target);
                 return ray_color(&new_ray, scene, depth - 1) * closest_record.attenuation();
@@ -124,8 +126,8 @@ fn main() {
     const ASPECT_RATIO: f32 = 16.0 / 9.0;
     // 横幅
     // const IMAGE_WIDTH: u32 = 225;
-    // const IMAGE_WIDTH: u32 = 1024;
-    const IMAGE_WIDTH: u32 = 512;
+    const IMAGE_WIDTH: u32 = 1024;
+    // const IMAGE_WIDTH: u32 = 512;
 
     // アンチエイリアシングのためのサンプル数
     // const SAMPLE_PER_PIXEL: u32 = 20;
@@ -168,23 +170,31 @@ fn main() {
         // 平均を計算するために足しこむための変数
         let mut sum_of_colors = origin();
         // 乱数
-        let mut rng = rand::thread_rng();
-        for _ in 0..SAMPLE_PER_PIXEL {
-            // 乱数を生成
-            let rand1 = rng.gen::<f32>();
-            let rand2 = rng.gen::<f32>();
 
-            // 画角の横座標
-            let u = ((x as f32) + rand1) / (WIDTH - 1.0);
-            // 画角の縦座標
-            // 画角の座標系では左上が(0, 0)なためy軸の向きが逆になっている
-            let v = ((HEIGHT - 1.0) - ((y as f32) + rand2)) / (HEIGHT - 1.0);
-            let ray = camera.get_ray(u, v);
+        let colors: Vec<Vec3> = (0..SAMPLE_PER_PIXEL)
+            .into_par_iter()
+            .map(|_| {
+                // 乱数を生成
+                let mut rng = rand::thread_rng();
+                let rand1 = rng.gen::<f32>();
+                let rand2 = rng.gen::<f32>();
 
-            // レイを飛ばして色を決める
-            let color = ray_color(&ray, &scene, MAX_DEPTH);
+                // 画角の横座標
+                let u = ((x as f32) + rand1) / (WIDTH - 1.0);
+                // 画角の縦座標
+                // 画角の座標系では左上が(0, 0)なためy軸の向きが逆になっている
+                let v = ((HEIGHT - 1.0) - ((y as f32) + rand2)) / (HEIGHT - 1.0);
+                let ray = camera.get_ray(u, v);
+
+                // レイを飛ばして色を決める
+                let color = ray_color(&ray, &scene, MAX_DEPTH);
+                color
+            })
+            .collect();
+
+        for c in colors {
             // 足しこむ
-            sum_of_colors = sum_of_colors + color;
+            sum_of_colors = sum_of_colors + c;
         }
 
         // ピクセルに色を塗る。サンプル数で割る

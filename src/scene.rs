@@ -2,7 +2,7 @@ use crate::{
     hittable::Hittable,
     item::Sphere,
     material::Material,
-    vec3::{color, random_color, random_color_range, random_f32, random_unit_vector, Vec3},
+    vec3::{color, random_color, random_color_range, random_f32, Vec3},
 };
 
 pub struct Scene {}
