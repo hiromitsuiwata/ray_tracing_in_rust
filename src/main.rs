@@ -12,6 +12,7 @@ mod hittable;
 mod item;
 mod material;
 mod ray;
+mod scene;
 mod vec3;
 
 use camera::Camera;
@@ -21,15 +22,15 @@ use rand::Rng;
 use ray::Ray;
 use vec3::{color, origin, random_f64, random_unit_vector, reflect, refract, unit_vector, Vec3};
 
-use crate::material::Material;
+use crate::{material::Material, scene::Scene};
 
-fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
+fn ray_color(ray: &Ray, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
     // 反射回数が一定よりも多くなったら、その時点で追跡をやめる
     if depth <= 0 {
         return color(0.0, 0.0, 0.0);
     }
 
-    let iter = world.iter();
+    let iter = scene.iter();
 
     // 物体に衝突する場合
     let mut closest_record: HitRecord = HitRecord::not_hit();
@@ -65,7 +66,7 @@ fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
                     closest_record.point() + closest_record.normal() + random_unit_vector();
                 // 跳ね返ったレイ
                 let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
-                return ray_color(&new_ray, world, depth - 1) * closest_record.attenuation();
+                return ray_color(&new_ray, scene, depth - 1) * closest_record.attenuation();
             }
             // 金属マテリアル
             Material::Metal => {
@@ -74,7 +75,7 @@ fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
                     + random_unit_vector() * closest_record.metal_fuzz();
                 // 跳ね返ったレイ
                 let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
-                return ray_color(&new_ray, world, depth - 1) * closest_record.attenuation();
+                return ray_color(&new_ray, scene, depth - 1) * closest_record.attenuation();
             }
             // 誘電体マテリアル
             Material::Dielectric => {
@@ -103,13 +104,13 @@ fn ray_color(ray: &Ray, world: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
                     let target = reflect(unit_vector(ray.direction()), closest_record.normal());
                     // 跳ね返ったレイ
                     let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
-                    return ray_color(&new_ray, world, depth - 1);
+                    return ray_color(&new_ray, scene, depth - 1);
                 }
 
                 // 屈折
                 let target = refract(unit_direction, closest_record.normal(), etai_over_etat);
                 let new_ray = Ray::new(closest_record.point(), target - closest_record.point());
-                return ray_color(&new_ray, world, depth - 1);
+                return ray_color(&new_ray, scene, depth - 1);
             }
             // 未指定
             Material::None => {
@@ -125,17 +126,17 @@ fn main() {
     // アスペクト比
     const ASPECT_RATIO: f64 = 16.0 / 9.0;
     // 横幅
-    const IMAGE_WIDTH: u32 = 225;
-    // const IMAGE_WIDTH: u32 = 1024;
+    // const IMAGE_WIDTH: u32 = 225;
+    const IMAGE_WIDTH: u32 = 1024;
     // const IMAGE_WIDTH: u32 = 512;
 
     // アンチエイリアシングのためのサンプル数
-    const SAMPLE_PER_PIXEL: u32 = 20;
-    // const SAMPLE_PER_PIXEL: u32 = 100;
+    // const SAMPLE_PER_PIXEL: u32 = 20;
+    const SAMPLE_PER_PIXEL: u32 = 100;
 
     // 反射回数の上限値。これ以上の反射が起きたら黒色とする
-    // const MAX_DEPTH: u32 = 10;
-    const MAX_DEPTH: u32 = 50;
+    const MAX_DEPTH: u32 = 10;
+    // const MAX_DEPTH: u32 = 50;
 
     const IMAGE_HEIGHT: u32 = ((IMAGE_WIDTH as f64) / ASPECT_RATIO) as u32;
     const HEIGHT: f64 = (IMAGE_HEIGHT - 1) as f64;
@@ -143,53 +144,24 @@ fn main() {
     const NUM_OF_PIXELS: u32 = IMAGE_WIDTH * IMAGE_HEIGHT;
 
     // カメラ
-    let look_from = Vec3::new(3.0, 3.0, 2.0);
-    let look_at = Vec3::new(0.0, 0.0, -1.0);
-    let dist_to_focus = (look_from - look_at).length();
+    let look_from = Vec3::new(12.0, 2.0, 3.0);
+    let look_at = Vec3::new(0.0, 0.0, 0.0);
+    let vup = Vec3::new(0.0, 1.0, 0.0);
+    let dist_to_focus = 10.0;
     let camera = Camera::new(
         look_from,
         look_at,
-        Vec3::new(0.0, 1.0, 0.0),
-        20.0,
+        vup,
+        25.0,
         ASPECT_RATIO,
         IMAGE_WIDTH,
-        2.0,
+        0.1,
         dist_to_focus,
     );
 
     let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
-    // 物体を配置
-    let mut world: Vec<Box<dyn Hittable>> = Vec::new();
-
-    world.push(Box::new(Sphere::new(
-        Vec3::new(0.0, 0.0, -1.0),
-        0.5,
-        Material::Lambertian,
-        color(0.3, 0.3, 0.7),
-        0.0,
-    )));
-    world.push(Box::new(Sphere::new(
-        Vec3::new(0.0, -100.5, -1.0),
-        100.0,
-        Material::Lambertian,
-        color(0.8, 0.8, 0.0),
-        0.0,
-    )));
-    world.push(Box::new(Sphere::new(
-        Vec3::new(1.0, 0.0, -1.0),
-        0.5,
-        Material::Metal,
-        color(0.8, 0.6, 0.2),
-        0.0,
-    )));
-    world.push(Box::new(Sphere::new(
-        Vec3::new(-0.5, 0.0, -1.0),
-        0.5,
-        Material::Dielectric,
-        color(1.0, 1.0, 1.0),
-        0.0,
-    )));
+    let scene = Scene::random_scene();
 
     // 進捗
     let mut progress: u32 = 0;
@@ -214,7 +186,7 @@ fn main() {
             let ray = camera.get_ray(u, v);
 
             // レイを飛ばして色を決める
-            let color = ray_color(&ray, &world, MAX_DEPTH);
+            let color = ray_color(&ray, &scene, MAX_DEPTH);
             // 足しこむ
             sum_of_colors = sum_of_colors + color;
         }
@@ -223,7 +195,7 @@ fn main() {
         write_color(pixel, sum_of_colors, SAMPLE_PER_PIXEL);
 
         // 進捗を表示
-        if progress % (NUM_OF_PIXELS / 20) == 0 {
+        if progress % (NUM_OF_PIXELS / 100) == 0 {
             println!("{:.0}%", 100.0 * (progress as f64) / NUM_OF_PIXELS as f64);
             io::stdout().flush().unwrap();
         }

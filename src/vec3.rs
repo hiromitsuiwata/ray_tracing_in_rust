@@ -167,6 +167,22 @@ pub fn random_in_unit_disk() -> Vec3 {
     Vec3::new(theta.cos(), theta.sin(), 0.0)
 }
 
+pub fn random_color() -> Vec3 {
+    Vec3::new(
+        random_f64(0.0, 1.0),
+        random_f64(0.0, 1.0),
+        random_f64(0.0, 1.0),
+    )
+}
+
+pub fn random_color_range(min: f64, max: f64) -> Vec3 {
+    Vec3::new(
+        random_f64(min, max),
+        random_f64(min, max),
+        random_f64(min, max),
+    )
+}
+
 /// 金属マテリアルの反射
 pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
     v - n * v.dot(n) * 2.0
