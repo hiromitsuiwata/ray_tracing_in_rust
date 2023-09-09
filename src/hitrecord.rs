@@ -1,4 +1,4 @@
-use std::f64::INFINITY;
+use std::f32::INFINITY;
 
 use crate::material::Material;
 use crate::ray::Ray;
@@ -9,10 +9,10 @@ pub struct HitRecord {
     point: Vec3,
     normal: Vec3,
     front_face: bool,
-    t: f64,
+    t: f32,
     material: Material,
     attenuation: Vec3,
-    metal_fuzz: f64,
+    metal_fuzz: f32,
 }
 
 impl HitRecord {
@@ -20,10 +20,10 @@ impl HitRecord {
         point: Vec3,
         normal: Vec3,
         front_face: bool,
-        t: f64,
+        t: f32,
         material: Material,
         attenuation: Vec3,
-        metal_fuzz: f64,
+        metal_fuzz: f32,
     ) -> HitRecord {
         HitRecord {
             point,
@@ -64,7 +64,7 @@ impl HitRecord {
         self.front_face
     }
 
-    pub fn t(&self) -> f64 {
+    pub fn t(&self) -> f32 {
         self.t
     }
 
@@ -72,7 +72,7 @@ impl HitRecord {
         self.attenuation
     }
 
-    pub fn metal_fuzz(&self) -> f64 {
+    pub fn metal_fuzz(&self) -> f32 {
         self.metal_fuzz
     }
 

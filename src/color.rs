@@ -3,7 +3,7 @@ use image::Rgb;
 use crate::vec3::Vec3;
 
 pub fn write_color(pixel: &mut Rgb<u8>, color: Vec3, sample_per_pixel: u32) {
-    let scale: f64 = 1.0 / sample_per_pixel as f64;
+    let scale: f32 = 1.0 / sample_per_pixel as f32;
 
     // 週末レイトレーシングの文書にはガンマ補正(γ=2)として平方根をとると記載されているがPNGにしているためか補正しなくてもよさそう
     let r = color.r() * scale;
@@ -16,7 +16,7 @@ pub fn write_color(pixel: &mut Rgb<u8>, color: Vec3, sample_per_pixel: u32) {
     *pixel = image::Rgb([ir, ig, ib]);
 }
 
-fn clamp(x: f64, min: f64, max: f64) -> f64 {
+fn clamp(x: f32, min: f32, max: f32) -> f32 {
     if x < min {
         min
     } else if max < x {

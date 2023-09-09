@@ -1,22 +1,16 @@
-use std::f64::consts::PI;
+use std::f32::consts::PI;
 
 use crate::ray::Ray;
 use crate::vec3::{random_in_unit_disk, unit_vector, Vec3};
 
 pub struct Camera {
-    aspect_ratio: f64,
-    image_width: u32,
-    image_height: u32,
-    viewport_height: f64,
-    viewport_width: f64,
     look_from: Vec3,
     horizontal: Vec3,
     vertical: Vec3,
     u: Vec3,
     v: Vec3,
-    w: Vec3,
     lower_left_corner: Vec3,
-    lens_radius: f64,
+    lens_radius: f32,
 }
 
 impl Camera {
@@ -24,11 +18,10 @@ impl Camera {
         look_from: Vec3,
         look_at: Vec3,
         vup: Vec3,
-        vfov: f64, // 垂直方向の視野角(弧度法)
-        aspect_ratio: f64,
-        image_width: u32,
-        aperture: f64,   // 絞り
-        focus_dist: f64, // 焦点距離
+        vfov: f32, // 垂直方向の視野角(弧度法)
+        aspect_ratio: f32,
+        aperture: f32,   // 絞り
+        focus_dist: f32, // 焦点距離
     ) -> Camera {
         let theta = vfov / 180.0 * PI;
         let h = (theta / 2.0).tan();
@@ -47,23 +40,17 @@ impl Camera {
         let lower_left_corner = look_from - horizontal / 2.0 - vertical / 2.0 - w * focus_dist;
 
         Camera {
-            aspect_ratio,
-            image_width,
-            image_height: ((image_width as f64) / aspect_ratio) as u32,
-            viewport_height,
-            viewport_width: aspect_ratio * viewport_height,
             look_from,
             horizontal,
             vertical,
             u,
             v,
-            w,
             lower_left_corner,
             lens_radius: aperture / 2.0,
         }
     }
 
-    pub fn get_ray(&self, s: f64, t: f64) -> Ray {
+    pub fn get_ray(&self, s: f32, t: f32) -> Ray {
         let rd = random_in_unit_disk() * self.lens_radius;
         let offset = self.u * rd.x() + self.v * rd.y();
 

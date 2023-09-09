@@ -2,7 +2,7 @@ use crate::{
     hittable::Hittable,
     item::Sphere,
     material::Material,
-    vec3::{color, random_color, random_color_range, random_f64, random_unit_vector, Vec3},
+    vec3::{color, random_color, random_color_range, random_f32, random_unit_vector, Vec3},
 };
 
 pub struct Scene {}
@@ -23,11 +23,11 @@ impl Scene {
 
         for a in -11..11 {
             for b in -11..11 {
-                let choose_mat = random_f64(0.0, 1.0);
+                let choose_mat = random_f32(0.0, 1.0);
                 let center = Vec3::new(
-                    a as f64 + 0.9 * random_f64(0.0, 1.0),
+                    a as f32 + 0.9 * random_f32(0.0, 1.0),
                     0.2,
-                    b as f64 + 0.9 * random_f64(0.0, 1.0),
+                    b as f32 + 0.9 * random_f32(0.0, 1.0),
                 );
 
                 if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
@@ -49,7 +49,7 @@ impl Scene {
                             0.2,
                             Material::Metal,
                             albedo,
-                            random_f64(0.0, 0.5),
+                            random_f32(0.0, 0.5),
                         )));
                     } else {
                         // 誘電体マテリアル
@@ -122,7 +122,38 @@ impl Scene {
             color(1.0, 1.0, 1.0),
             0.0,
         )));
+        scene
+    }
 
+    pub fn scene0() -> Vec<Box<dyn Hittable>> {
+        // 物体を配置
+        let mut scene: Vec<Box<dyn Hittable>> = Vec::new();
+
+        // 地面
+        scene.push(Box::new(Sphere::new(
+            Vec3::new(0.0, -1000.0, 0.0),
+            1000.0,
+            Material::Lambertian,
+            color(0.5, 0.5, 0.5),
+            0.0,
+        )));
+
+        scene.push(Box::new(Sphere::new(
+            Vec3::new(0.0, 1.0, 0.0),
+            1.0,
+            Material::Metal,
+            color(1.0, 1.0, 1.0),
+            0.0,
+        )));
+
+        // let albedo = random_color() * random_color();
+        // scene.push(Box::new(Sphere::new(
+        //     Vec3::new(1.0, 0.2, 0.0),
+        //     0.2,
+        //     Material::Lambertian,
+        //     albedo,
+        //     0.0,
+        // )));
         scene
     }
 }
