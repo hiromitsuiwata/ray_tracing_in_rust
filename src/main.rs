@@ -38,7 +38,7 @@ fn ray_color(ray: &Ray, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
     // カメラに最も近い物体のHitRecordを探す
     let mut tmax = INFINITY;
     for item in iter {
-        match item.hit(ray, 0.001, tmax) {
+        match item.hit(ray, 0.001, tmax, ray.time()) {
             None => {}
             Some(hit_record) => {
                 if closest_record.t() > hit_record.t() {
@@ -64,7 +64,7 @@ fn ray_color(ray: &Ray, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
                 // 新しい向き先(拡散)
                 let target = closest_record.normal() + random_unit_vector();
                 // 跳ね返ったレイ
-                let new_ray = Ray::new(closest_record.point(), target);
+                let new_ray = Ray::new(closest_record.point(), target, ray.time());
                 return ray_color(&new_ray, scene, depth - 1) * closest_record.attenuation();
             }
             // 金属マテリアル
@@ -73,7 +73,7 @@ fn ray_color(ray: &Ray, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
                 let target = reflect(unit_vector(ray.direction()), closest_record.normal())
                     + random_unit_vector() * closest_record.metal_fuzz();
                 // 跳ね返ったレイ
-                let new_ray = Ray::new(closest_record.point(), target);
+                let new_ray = Ray::new(closest_record.point(), target, ray.time());
                 return ray_color(&new_ray, scene, depth - 1) * closest_record.attenuation();
             }
             // 誘電体マテリアル
@@ -102,13 +102,13 @@ fn ray_color(ray: &Ray, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
                     // 反射
                     let target = reflect(unit_vector(ray.direction()), closest_record.normal());
                     // 跳ね返ったレイ
-                    let new_ray = Ray::new(closest_record.point(), target);
+                    let new_ray = Ray::new(closest_record.point(), target, ray.time());
                     return ray_color(&new_ray, scene, depth - 1);
                 }
 
                 // 屈折
                 let target = refract(unit_direction, closest_record.normal(), etai_over_etat);
-                let new_ray = Ray::new(closest_record.point(), target);
+                let new_ray = Ray::new(closest_record.point(), target, ray.time());
                 return ray_color(&new_ray, scene, depth - 1);
             }
             // 未指定
@@ -126,15 +126,17 @@ fn main() {
     const ASPECT_RATIO: f32 = 16.0 / 9.0;
     // 横幅
     // const IMAGE_WIDTH: u32 = 225;
-    const IMAGE_WIDTH: u32 = 1024;
-    // const IMAGE_WIDTH: u32 = 512;
+    // const IMAGE_WIDTH: u32 = 1024;
+    // const IMAGE_WIDTH: u32 = 1366;
+    const IMAGE_WIDTH: u32 = 512;
+    // const IMAGE_WIDTH: u32 = 1920;
 
     // アンチエイリアシングのためのサンプル数
-    // const SAMPLE_PER_PIXEL: u32 = 20;
+    // const SAMPLE_PER_PIXEL: u32 = 4;
     const SAMPLE_PER_PIXEL: u32 = 100;
 
     // 反射回数の上限値。これ以上の反射が起きたら黒色とする
-    // const MAX_DEPTH: u32 = 10;
+    // const MAX_DEPTH: u32 = 2;
     const MAX_DEPTH: u32 = 50;
 
     const IMAGE_HEIGHT: u32 = ((IMAGE_WIDTH as f32) / ASPECT_RATIO) as u32;
@@ -153,8 +155,10 @@ fn main() {
         vup,
         25.0,
         ASPECT_RATIO,
-        0.1,
+        0.05,
         dist_to_focus,
+        0.0,
+        10.0,
     );
 
     let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
